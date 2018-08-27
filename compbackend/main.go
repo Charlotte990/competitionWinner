@@ -46,9 +46,7 @@ var entryType = graphql.NewObject(graphql.ObjectConfig{
 var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RootQuery",
 	Fields: graphql.Fields{
-		/*
-			curl -g 'http://localhost:8080/graphql?query={todoList{id,text,done}}'
-		*/
+		// returns all entries
 		"entryList": &graphql.Field{
 			Type:        graphql.NewList(entryType),
 			Description: "List of entries",
@@ -56,6 +54,7 @@ var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 				return EntryList, nil
 			},
 		},
+		// returns 1 random entry
 		"randomSelection": &graphql.Field{
 			Type:        entryType,
 			Description: "Random selection",
@@ -74,7 +73,7 @@ var schema, _ = graphql.NewSchema(graphql.SchemaConfig{
 	Query: rootQuery,
 })
 
-// generates the queries defined in the rootQuery, currently only 'entryList'
+// generates the queries defined in the rootQuery
 func executeQuery(query string, schema graphql.Schema) *graphql.Result {
 	result := graphql.Do(graphql.Params{
 		Schema:        schema,
