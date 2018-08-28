@@ -1,8 +1,8 @@
 <template>
   <div>
     <h1>{{ msg }}</h1>
-    <button @click="findWinner()">Select Winner</button>
-    <h2>{{ winnerName }}</h2>
+    <button v-if="!foundWinner" @click="findWinner()">Select Winner</button>
+    <h2 v-else>{{ winnerName }}</h2>
   </div>
 </template>
 
