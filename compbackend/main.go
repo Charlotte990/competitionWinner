@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
@@ -12,8 +14,8 @@ import (
 
 // Entry contains the rules for an Entry type object
 type Entry struct {
-	ID       int64  `json:"id"`
-	UserName string `json:"username"`
+	ID       int64  `json:"id" graphql:"id"`
+	UserName string `json:"username" graphql:"username"`
 }
 
 // EntryList is a slice of lots of entries
@@ -24,7 +26,8 @@ func init() {
 	entry1 := Entry{ID: 1, UserName: "Charlotte"}
 	entry2 := Entry{ID: 2, UserName: "Jerry"}
 	entry3 := Entry{ID: 3, UserName: "Harry"}
-	EntryList = append(EntryList, entry1, entry2, entry3)
+	entry4 := Entry{ID: 3, UserName: "Ben"}
+	EntryList = append(EntryList, entry1, entry2, entry3, entry4)
 
 	rand.Seed(time.Now().UnixNano())
 }
@@ -85,14 +88,39 @@ func executeQuery(query string, schema graphql.Schema) *graphql.Result {
 	return result
 }
 
+type entriesStruct struct {
+	Query string `json:"query"`
+}
+
+func entries(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, X-Auth-Token")
+	w.Header().Set("Access-Control-Request-Headers", "Origin, Content-Type, X-Auth-Token, Access-Control-Allow-Methods")
+	if r.Method == http.MethodOptions {
+		return
+	}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(string(body))
+	var entries entriesStruct
+	err = json.Unmarshal(body, &entries)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(entries.Query)
+	result := executeQuery(entries.Query, schema)
+	fmt.Println(result)
+	json.NewEncoder(w).Encode(result)
+}
+
 func main() {
 	// create handler for specific url endpoint - this displays the json encoded results of the query sent in the URL
 	// i.e. http://localhost:8080/allentries?query={entryList{id,username}}
-	http.HandleFunc("/entries", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		result := executeQuery(r.URL.Query().Get("query"), schema)
-		json.NewEncoder(w).Encode(result)
-	})
+	http.HandleFunc("/entries", entries)
+
 	// run the server
 	fmt.Println("Now server is running on port 8080")
 	http.ListenAndServe(":8080", nil)

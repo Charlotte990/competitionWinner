@@ -1,8 +1,8 @@
 <template>
   <div>
     <h1>{{ msg }}</h1>
-    <button v-if="!foundWinner" @click="findWinner()">Select Winner</button>
-    <h2 v-else>{{ winnerName }}</h2>
+    <button @click="findWinner()">Select Winner</button>
+    <h2>{{ winnerName }}</h2>
   </div>
 </template>
 
@@ -23,15 +23,30 @@ export default {
   methods: {
     findWinner () {
       console.log('in func')
-      axios
-        .get('http://localhost:8080/entries?query={randomSelection{id,username}}')
-        .then(response => (this.info = response.data.data.randomSelection))
+      axios({
+        url: 'http://localhost:8080/entries',
+        method: 'post',
+        data: {
+          query: `
+            query rootQuery {
+              randomSelection {
+                id
+                username
+                }
+              }
+            `
+        }
+      }).then(
+        response => {
+          this.info = response.data.data.randomSelection
+          this.foundWinner = true
+          this.winnerName = this.info.username
+          console.log(this.info)
+        })
         .catch(error => {
           this.message = 'api not working'
           console.log(error)
         })
-      this.foundWinner = true
-      this.winnerName = this.info.username
     }
   }
 }
